@@ -14,6 +14,7 @@ export default function Navbar({ user }) {
     <nav style={styles.nav}>
       <Link to="/" style={styles.brand}>Campus Lost & Found</Link>
       <div style={styles.links}>
+        <Link to="/blockchain" style={styles.link}>Blockchain</Link>
         {user ? (
           <>
             <Link to="/post-lost" style={styles.link}>Report Lost</Link>

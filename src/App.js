@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import PostLost from "./pages/PostLost";
 import PostFound from "./pages/PostFound";
+import BlockchainExplorer from "./pages/BlockchainExplorer";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
         <Route path="/signup" element={user ? <Navigate to="/" /> : <Signup />} />
+        <Route path="/blockchain" element={<BlockchainExplorer />} />
         <Route path="/post-lost" element={
           <ProtectedRoute user={user}><PostLost /></ProtectedRoute>
         } />

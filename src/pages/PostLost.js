@@ -2,6 +2,7 @@ import { useState } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import { addBlock } from "../blockchain/simpleChain";
 
 export default function PostLost() {
   const [title, setTitle] = useState("");
@@ -16,13 +17,21 @@ export default function PostLost() {
     e.preventDefault();
     setError("");
     try {
-      await addDoc(collection(db, "items"), {
+      const docRef = await addDoc(collection(db, "items"), {
         type: "lost",
         title, description, category, location, dateLost,
         reporterId: auth.currentUser.uid,
         status: "open",
         createdAt: serverTimestamp(),
       });
+
+      // Log this event to the blockchain
+      await addBlock({
+        eventType: "LOST_REPORTED",
+        itemId: docRef.id,
+        data: { title, description, category, location, dateLost, type: "lost" },
+      });
+
       navigate("/");
     } catch (err) {
       setError(err.message);

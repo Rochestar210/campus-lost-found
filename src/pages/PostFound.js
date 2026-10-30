@@ -2,6 +2,7 @@ import { useState } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import { addBlock } from "../blockchain/simpleChain";
 
 export default function PostFound() {
   const [title, setTitle] = useState("");
@@ -16,13 +17,21 @@ export default function PostFound() {
     e.preventDefault();
     setError("");
     try {
-      await addDoc(collection(db, "items"), {
+      const docRef = await addDoc(collection(db, "items"), {
         type: "found",
         title, description, category, location, dateFound,
         reporterId: auth.currentUser.uid,
         status: "open",
         createdAt: serverTimestamp(),
       });
+
+      // Log this event to the blockchain
+      await addBlock({
+        eventType: "FOUND_REPORTED",
+        itemId: docRef.id,
+        data: { title, description, category, location, dateFound, type: "found" },
+      });
+
       navigate("/");
     } catch (err) {
       setError(err.message);
