@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 import ItemCard from "../components/ItemCard";
 
 export default function Home() {
@@ -33,7 +33,9 @@ export default function Home() {
         <p style={{ marginTop: 20 }}>No items yet. Be the first to post!</p>
       ) : (
         <div style={styles.grid}>
-          {filtered.map((item) => <ItemCard key={item.id} item={item} />)}
+          {filtered.map((item) => (
+            <ItemCard key={item.id} item={item} currentUser={auth.currentUser} />
+          ))}
         </div>
       )}
     </div>

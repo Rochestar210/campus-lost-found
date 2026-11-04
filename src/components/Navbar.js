@@ -15,6 +15,12 @@ export default function Navbar({ user }) {
       <Link to="/" style={styles.brand}>Campus Lost & Found</Link>
       <div style={styles.links}>
         <Link to="/blockchain" style={styles.link}>Blockchain</Link>
+        
+        {/* Admin Portal Link */}
+        <a href="https://campus-lost-found-admin.vercel.app/" target="_blank" rel="noopener noreferrer" style={styles.link}>
+          Admin Portal
+        </a>
+
         {user ? (
           <>
             <Link to="/post-lost" style={styles.link}>Report Lost</Link>
