@@ -7,10 +7,11 @@ export default function ItemCard({ item, currentUser }) {
   const isOwner = currentUser && currentUser.uid === item.reporterId;
   const [claiming, setClaiming] = useState(false);
   const [message, setMessage] = useState("");
+  const [comment, setComment] = useState("");
 
   const handleMarkReturned = async () => {
     if (window.confirm("Mark this item as returned/resolved?")) {
-      await updateDoc(doc(db, "items", item.id), { status: "returned" });
+      await updateDoc(doc(db, "items", item.id), { status: "returned", returnedAt: new Date().toISOString() });
     }
   };
 
@@ -22,10 +23,7 @@ export default function ItemCard({ item, currentUser }) {
 
   const handleClaimSubmit = async (e) => {
     e.preventDefault();
-    if (!currentUser) {
-      alert("Please log in to claim an item.");
-      return;
-    }
+    if (!currentUser) return alert("Please log in to claim an item.");
     try {
       await addDoc(collection(db, "claims"), {
         itemId: item.id,
@@ -41,6 +39,29 @@ export default function ItemCard({ item, currentUser }) {
       setMessage("");
     } catch (err) {
       alert("Error sending claim: " + err.message);
+    }
+  };
+
+  // NEW: Handle public comments on the item
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!currentUser) return alert("Please log in to comment.");
+    try {
+      // We append the comment to an array inside the item document
+      const newComment = {
+        text: comment,
+        author: currentUser.email,
+        date: new Date().toISOString()
+      };
+      
+      const currentComments = item.comments || [];
+      await updateDoc(doc(db, "items", item.id), {
+        comments: [...currentComments, newComment]
+      });
+      
+      setComment("");
+    } catch (err) {
+      alert("Error adding comment: " + err.message);
     }
   };
 
@@ -75,7 +96,7 @@ export default function ItemCard({ item, currentUser }) {
           ) : (
             <form onSubmit={handleClaimSubmit} style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
               <textarea 
-                placeholder="Describe why this is yours (e.g., 'It has a blue sticker on the back')..."
+                placeholder="Describe why this is yours..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 required
@@ -88,6 +109,39 @@ export default function ItemCard({ item, currentUser }) {
               </div>
             </form>
           )}
+        </div>
+      )}
+
+      {/* NEW: Comments Section (Visible to everyone logged in, even if returned) */}
+      {currentUser && (
+        <div style={{ marginTop: 15, paddingTop: 15, borderTop: "1px dashed #ccc" }}>
+          <h4 style={{ fontSize: 14, marginBottom: 8 }}>💬 Comments</h4>
+          
+          {/* Display existing comments */}
+          {item.comments && item.comments.length > 0 ? (
+            <div style={{ maxHeight: 100, overflowY: "auto", marginBottom: 10, fontSize: 12, background: "#f9fafb", padding: 8, borderRadius: 4 }}>
+              {item.comments.map((c, i) => (
+                <div key={i} style={{ marginBottom: 4 }}>
+                  <strong>{c.author.split('@')[0]}:</strong> {c.text}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>No comments yet.</p>
+          )}
+
+          {/* Add a comment form */}
+          <form onSubmit={handleAddComment} style={{ display: "flex", gap: 6 }}>
+            <input 
+              type="text" 
+              placeholder="Add a comment..." 
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              required
+              style={{ flex: 1, padding: 6, fontSize: 12, borderRadius: 4, border: "1px solid #ccc" }}
+            />
+            <button type="submit" style={{ padding: "6px 10px", background: "#4b5563", color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 12 }}>Post</button>
+          </form>
         </div>
       )}
     </div>
