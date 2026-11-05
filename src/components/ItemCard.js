@@ -9,9 +9,26 @@ export default function ItemCard({ item, currentUser }) {
   const [message, setMessage] = useState("");
   const [comment, setComment] = useState("");
 
+  // NEW: Calculate days remaining
+  let daysRemaining = 0;
+  if (item.status === "returned" && item.returnedAt) {
+    const returnedDate = new Date(item.returnedAt);
+    const deleteDate = new Date(returnedDate);
+    deleteDate.setDate(deleteDate.getDate() + 30); // Add 30 days
+    
+    const today = new Date();
+    const timeDiff = deleteDate.getTime() - today.getTime();
+    daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    if (daysRemaining < 0) daysRemaining = 0; // In case it's pending deletion
+  }
+
   const handleMarkReturned = async () => {
     if (window.confirm("Mark this item as returned/resolved?")) {
-      await updateDoc(doc(db, "items", item.id), { status: "returned", returnedAt: new Date().toISOString() });
+      await updateDoc(doc(db, "items", item.id), { 
+        status: "returned", 
+        returnedAt: new Date().toISOString() 
+      });
     }
   };
 
@@ -42,12 +59,10 @@ export default function ItemCard({ item, currentUser }) {
     }
   };
 
-  // NEW: Handle public comments on the item
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!currentUser) return alert("Please log in to comment.");
     try {
-      // We append the comment to an array inside the item document
       const newComment = {
         text: comment,
         author: currentUser.email,
@@ -79,6 +94,13 @@ export default function ItemCard({ item, currentUser }) {
       <p style={{ ...styles.status, color: item.status === "returned" ? "#16a34a" : "#2563eb" }}>
         Status: {item.status.toUpperCase()}
       </p>
+
+      {/* NEW: Countdown Display */}
+      {item.status === "returned" && (
+        <div style={styles.countdownBox}>
+          ⏳ Auto-delete in <strong>{daysRemaining} days</strong>
+        </div>
+      )}
 
       {/* Owner Actions */}
       {isOwner && item.status !== "returned" && (
@@ -112,12 +134,11 @@ export default function ItemCard({ item, currentUser }) {
         </div>
       )}
 
-      {/* NEW: Comments Section (Visible to everyone logged in, even if returned) */}
+      {/* Comments Section */}
       {currentUser && (
         <div style={{ marginTop: 15, paddingTop: 15, borderTop: "1px dashed #ccc" }}>
           <h4 style={{ fontSize: 14, marginBottom: 8 }}>💬 Comments</h4>
           
-          {/* Display existing comments */}
           {item.comments && item.comments.length > 0 ? (
             <div style={{ maxHeight: 100, overflowY: "auto", marginBottom: 10, fontSize: 12, background: "#f9fafb", padding: 8, borderRadius: 4 }}>
               {item.comments.map((c, i) => (
@@ -130,7 +151,6 @@ export default function ItemCard({ item, currentUser }) {
             <p style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>No comments yet.</p>
           )}
 
-          {/* Add a comment form */}
           <form onSubmit={handleAddComment} style={{ display: "flex", gap: 6 }}>
             <input 
               type="text" 
@@ -155,6 +175,7 @@ const styles = {
   desc: { fontSize: 14, color: "#555" },
   meta: { fontSize: 13, color: "#777" },
   status: { fontSize: 12, marginTop: 6, fontWeight: "bold" },
+  countdownBox: { marginTop: 8, padding: "8px", background: "#fef2f2", color: "#991b1b", borderRadius: 6, fontSize: 12, textAlign: "center", border: "1px solid #fecaca" },
   actions: { display: "flex", gap: 8, marginTop: 10, paddingTop: 10, borderTop: "1px solid #eee", flexWrap: "wrap" },
   returnBtn: { flex: 1, padding: "6px", background: "#10b981", color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 12 },
   deleteBtn: { flex: 1, padding: "6px", background: "#ef4444", color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 12 },
